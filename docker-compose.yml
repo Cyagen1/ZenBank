@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  zencore:
+    build:
+      context: .
+      dockerfile: ZenCore/Dockerfile
+    ports:
+      - "8001:8080"
+    environment:
+      DataAccessSettings__ConnectionString: "Server=mssql;Database=master;User=sa;Password=Your_password123;Encrypt=False"
+      ZenReportingSettings__BaseUri: "https://host.docker.internal:8002"
+      ZenReportingSettings__ReportsPath: "api/Reporting/mail"
+      ZenReportingSettings__CronConfiguration: "* */5 * ? * *"
+    depends_on:
+      - zenreporting
+      - mssql
+
+  zenreporting:
+    build:
+      context: .
+      dockerfile: ZenReporting/Dockerfile
+    ports:
+      - "8002:8080"
+    environment:
+      MailServiceSettings__SenderMail: "sender@mail.com"
+      MailServiceSettings__SmtpServer: "host.docker.internal"
+      MailServiceSettings__Port: "1025"
+    depends_on:
+      - mailhog
+      - mssql
+
+  mssql:
+    image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "Your_password123"
+      ACCEPT_EULA: "Y"
+
+  mailhog:
+    image: "mailhog/mailhog"
+    ports:
+      - "8025:8025"
+      - "1025:1025"
